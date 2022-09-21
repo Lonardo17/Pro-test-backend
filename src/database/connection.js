@@ -8,8 +8,7 @@ if (!MONGODB_URL) {
 }
  const db = mongoose.connect(MONGODB_URL, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-    // dbName: 'db-contacts',
+    useUnifiedTopology: true
   });
   mongoose.connection.on('connected', () => {
     console.log('Mongoose: Database connection successful.');
