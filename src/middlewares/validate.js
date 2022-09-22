@@ -10,8 +10,6 @@ function validate(schema) {
         .json({ message: `missing value or error at ${errorField} field` });
     }
 
-    console.log(result);
-
     req.body = result.value;
     next();
   };
