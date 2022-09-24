@@ -5,6 +5,6 @@ const { testSchemaValidate } = require("../../service/testSchemaValidate");
 
 const router = express.Router();
 
-router.get("/", validate(testSchemaValidate), getTestQuestions);
+router.post("/", validate(testSchemaValidate), getTestQuestions);
 
 module.exports = router;
