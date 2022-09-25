@@ -11,8 +11,6 @@ async function getRandomTestQuestions(testType) {
       ? await TestingTheory.find()
       : await QATechTraining.find();
 
-  console.log("arrayOfQuestions", arrayOfQuestions);
-
   const arrayOfRandomIndexes = getRandomIndexes(
     arrayOfQuestions.length,
     testQuestionsCount

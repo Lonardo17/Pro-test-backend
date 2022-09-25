@@ -1,5 +1,5 @@
-const theoryTest = "testing theory";
-const techTest = "technical training";
+const theoryTest = "testing_theory";
+const techTest = "technical_training";
 const testQuestionsCount = 12;
 
 module.exports = {

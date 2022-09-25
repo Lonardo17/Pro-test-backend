@@ -1,10 +1,10 @@
 const express = require("express");
 const { getTestQuestions } = require("../../controllers/controllerTest");
-const { validate } = require("../../middlewares/validate");
+const { validate } = require("../../middlewares/validateTestRoutes");
 const { testSchemaValidate } = require("../../service/testSchemaValidate");
 
 const router = express.Router();
 
-router.get("/", validate(testSchemaValidate), getTestQuestions);
+router.get("/:testType", validate(testSchemaValidate), getTestQuestions);
 
 module.exports = router;
