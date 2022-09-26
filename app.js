@@ -2,6 +2,7 @@ const express = require("express");
 const logger = require("morgan");
 const cors = require("cors");
 const testsRouter = require("./src/routes/api/tests");
+const usersRouter = require("./src/routes/api/users");
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/test", testsRouter);
+app.use("/user", usersRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
