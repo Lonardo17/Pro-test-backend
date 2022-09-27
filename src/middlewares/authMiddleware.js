@@ -3,29 +3,32 @@ const jwt = require("jsonwebtoken");
 const { Users } = require("../database/usersSchema");
 
 const authMiddleware = async (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(401).json({
+      message: "Not authorized",
+    });
+  }
+
+  const [tokenType, token] = req.headers.authorization.split(" ");
+  if (!token) {
+    return res.status(401).json({
+      message: "Not authorized",
+    });
+  }
+
   try {
-    const authorizationHeader = req.get("Authorization");
-    const token = authorizationHeader.replace("Bearer ", "");
-
-    if (!token) {
+    const decodeJwt = await jwt.decode(token, process.env.SECRET);
+    console.log("DECODE_JWT", decodeJwt);
+    console.log("DECODE_JWT_ID", decodeJwt.id);
+    console.log("TOKEN", token);
+    if (!(await Users.findOne({ _id: decodeJwt.id, token: token }))) {
       res.json({
         status: "Unauthorized",
         code: 401,
         message: "Not authorized",
       });
     }
-
-    const decodeJwt = jwt.decode(token, process.env.SECRET);
-    const user = await Users.findOne({ _id: decodeJwt._id });
-    if (!user) {
-      res.json({
-        status: "Unauthorized",
-        code: 401,
-        message: "Not authorized",
-      });
-    }
-    req.token = token;
-    req.user = user;
+    req.userId = decodeJwt.id;
 
     next();
   } catch (err) {

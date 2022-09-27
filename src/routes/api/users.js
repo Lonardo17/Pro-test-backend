@@ -3,14 +3,16 @@ const {
   userRegistration,
   userLogin,
   userLogout,
+  getCurrentUser,
 } = require("../../controllers/controllerUsers");
 const { userValidate } = require("../../middlewares/validateUsers");
 const { authMiddleware } = require("../../middlewares/authMiddleware");
 
 const router = express.Router();
 
-router.get("/registration", userValidate, userRegistration);
-router.get("/authorization", userValidate, userLogin);
+router.post("/registration", userValidate, userRegistration);
+router.post("/authorization", userValidate, userLogin);
 router.get("/logout", authMiddleware, userLogout);
+router.get("/current", authMiddleware, getCurrentUser);
 
 module.exports = router;
