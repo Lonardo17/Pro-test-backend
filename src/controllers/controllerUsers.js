@@ -1,6 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+
 // const uuid = require("uuid");
 // const sgMail = require("@sendgrid/mail");
 const { Users } = require("../database/usersSchema");
