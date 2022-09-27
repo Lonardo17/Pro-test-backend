@@ -1,9 +1,9 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
-const uuid = require("uuid");
+// const uuid = require("uuid");
 // const sgMail = require("@sendgrid/mail");
-const Users = require("../database/usersSchema");
+const { Users } = require("../database/usersSchema");
 
 const userRegistration = async (req, res, next) => {
   try {
@@ -13,12 +13,7 @@ const userRegistration = async (req, res, next) => {
     const data = await Users.findOne({ email: email });
     const avatarURL = gravatar.url(email);
     // const verificationToken = uuid.v4();
-    if (data)
-      return res.json({
-        status: "conflict",
-        code: 409,
-        message: "Email in use",
-      });
+    if (data) return res.status(409).json({ message: "Email in use" });
     const newUser = new Users({
       password: hashPassword,
       email,
@@ -39,12 +34,7 @@ const userRegistration = async (req, res, next) => {
     // };
 
     // await sgMail.send(msg);
-
-    res.json({
-      status: "Created",
-      code: 201,
-      user: { email, avatarURL },
-    });
+    res.status(201).json({ user: { email, avatarURL } });
   } catch (err) {
     console.log(err);
     next(err);
@@ -63,26 +53,19 @@ const userLogin = async (req, res, next) => {
     }
 
     if (!data || !isCorrectPassword)
-      return res.json({
-        status: "Unauthorized",
-        code: 401,
-        message: "Email or password is wrong",
-      });
+      return res.status(401).json({ message: "Email or password is wrong" });
 
     if (isCorrectPassword) {
-      const payload = { payload: "payload" };
-      const secret = "secret words";
+      const payload = { id: data._id };
+      const secret = process.env.SECRET;
       const token = jwt.sign(payload, secret, { expiresIn: "1d" });
       await Users.findOneAndUpdate({ email: email }, { token: token });
-      res.json({
-        status: "OK",
-        code: 200,
-        ResponseBody: {
+
+      res.status(200).json({
+        user: {
+          email: data.email,
+          avatar: data.avatarURL,
           token,
-          user: {
-            email,
-            avatarURL,
-          },
         },
       });
     }
@@ -94,22 +77,30 @@ const userLogin = async (req, res, next) => {
 
 const userLogout = async (req, res, next) => {
   try {
-    const token = req.token;
-    const decode = jwt.decode(token);
-    const userById = Users.findOne({ _id: decode.id });
-    if (!userById) {
-      return res.json({
-        status: "Unauthorized",
-        code: 401,
-        message: "Not authorized",
-      });
-    }
-    await Users.findByIdAndUpdate({ _id: decode.id }, { token: null });
-    res.json({ status: "No Content", code: 204 });
+    await Users.findByIdAndUpdate(req.userId, { token: null });
+    res.status(204).json("No Content");
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
 
-module.exports = { userRegistration, userLogin, userLogout };
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const authorizationHeader = req.get("Authorization");
+    const token = authorizationHeader.replace("Bearer ", "");
+    const decode = await jwt.decode(token);
+    const user = await Users.findOne({ _id: decode.id });
+    res.status(200).json({
+      user: {
+        email: user.email,
+        avatar: user.avatarURL,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports = { userRegistration, userLogin, userLogout, getCurrentUser };
