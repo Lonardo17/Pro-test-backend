@@ -3,7 +3,7 @@ const { testSchemaValidate } = require("../service/testSchemaValidate");
 const answersSchemaValidate = async (req, res, next) => {
   try {
     const { answers } = req.body;
-    await testSchemaValidate.validateAsync(req.body);
+    await testSchemaValidate.validateAsync({ testType: req.body?.testType });
     const data = JSON.parse(answers);
     if (
       !(
@@ -16,6 +16,7 @@ const answersSchemaValidate = async (req, res, next) => {
     }
     next();
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
