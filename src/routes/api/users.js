@@ -4,6 +4,7 @@ const {
   userLogin,
   userLogout,
   getCurrentUser,
+  loginUserGoogle,
 } = require("../../controllers/controllerUsers");
 const { userValidate } = require("../../middlewares/validateUsers");
 const { authMiddleware } = require("../../middlewares/authMiddleware");
@@ -14,5 +15,6 @@ router.post("/registration", userValidate, userRegistration);
 router.post("/authorization", userValidate, userLogin);
 router.get("/logout", authMiddleware, userLogout);
 router.get("/current", authMiddleware, getCurrentUser);
+router.post("/googlelogin", loginUserGoogle);
 
 module.exports = router;

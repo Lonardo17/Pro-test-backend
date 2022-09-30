@@ -4,6 +4,47 @@ const gravatar = require("gravatar");
 // const uuid = require("uuid");
 // const sgMail = require("@sendgrid/mail");
 const { Users } = require("../database/usersSchema");
+const { OAuth2Client } = require("google-auth-library");
+
+const googleClient = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  redirectUri: process.env.GOOGLE_REDIRECT_URI,
+});
+
+const loginUserGoogle = async (req, res) => {
+  console.log("TOKEN", req.body.code);
+  // const tokens = await googleClient.getToken(req.body.code);
+
+  const ticket = await googleClient.verifyIdToken({
+    // idToken: `${tokens.id_token}`,
+    idToken: req.body.code,
+    audient: process.env.GOOGLE_CLIENT_ID,
+  });
+  console.log("TICKET", ticket);
+  const { email } = ticket.getPayload();
+
+  let user = await Users.findOne({ email });
+  if (!user) {
+    user = await Users.create({ email: email });
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      process.env.SECRET
+    );
+    user = await Users.findByIdAndUpdate(user._id, { token }, { new: true });
+  } else {
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      process.env.SECRET
+    );
+    user = await Users.findByIdAndUpdate(user._id, { token }, { new: true });
+  }
+  res.status(200).json(user);
+};
 
 const userRegistration = async (req, res, next) => {
   try {
@@ -103,4 +144,10 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
-module.exports = { userRegistration, userLogin, userLogout, getCurrentUser };
+module.exports = {
+  userRegistration,
+  userLogin,
+  userLogout,
+  getCurrentUser,
+  loginUserGoogle,
+};
