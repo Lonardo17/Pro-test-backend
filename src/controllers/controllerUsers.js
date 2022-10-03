@@ -1,10 +1,57 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
-
+const { OAuth2Client } = require("google-auth-library");
+const { Users } = require("../database/usersSchema");
+require("dotenv").config();
 // const uuid = require("uuid");
 // const sgMail = require("@sendgrid/mail");
-const { Users } = require("../database/usersSchema");
+
+const googleClient = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  redirectUri: process.env.GOOGLE_REDIRECT_URI,
+});
+const loginGoogleUsers = async (req, res, next) => {
+  const code = req.body.code;
+  const { tokens } = await googleClient.getToken(code);
+  const ticket = await googleClient.verifyIdToken({
+    idToken: `${tokens.id_token}`,
+    audient: `${process.env.GOOGLE_CLIENT_ID}`,
+  });
+  const { email, picture } = ticket.getPayload();
+  console.log(picture);
+  let user = await Users.findOne({ email });
+  if (!user) {
+    user = await Users.create({ email: email });
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      process.env.SECRET
+    );
+    user = await Users.findByIdAndUpdate(user._id, { token }, { new: true });
+  } else {
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      process.env.SECRET
+    );
+    user = await Users.findByIdAndUpdate(user._id, { token }, { new: true });
+  }
+  const avatarURL =
+    "https://th-thumbnailer.cdn-si-edu.com/wVkY4ktA-0JvRsuh8EASm6NoSNs=/1000x750/filters:no_upscale():focal(978x630:979x631)/https://tf-cmsv2-smithsonianmag-media.s3.amazonaws.com/filer/db/82/db8234fc-f167-4285-82bd-123d035e32ad/cats.jpg";
+  const userAvatar = picture || avatarURL;
+
+  res.status(200).json({
+    user: {
+      email: user.email,
+      avatar: userAvatar,
+      token: user.token,
+    },
+  });
+};
 
 const userRegistration = async (req, res, next) => {
   try {
@@ -12,7 +59,10 @@ const userRegistration = async (req, res, next) => {
     const costFactor = 6;
     const hashPassword = await bcryptjs.hash(password, costFactor);
     const data = await Users.findOne({ email: email });
-    const avatarURL = gravatar.url(email);
+    const avatarURL = gravatar.url(email, {
+      protocol: "https",
+      d: "identicon",
+    });
     // const verificationToken = uuid.v4();
     if (data) return res.status(409).json({ message: "Email in use" });
     const newUser = new Users({
@@ -24,17 +74,6 @@ const userRegistration = async (req, res, next) => {
     });
     await newUser.save();
 
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-    // const msg = {
-    //   to: email,
-    //   from: "pustosmekhov.al@gmail.com",
-    //   subject: "Completion of registration",
-    //   text: "Follow the link to complete registration: localhost:3000/api/users/verify/:verificationToken",
-    //   html: `<p>Follow the link to complete registration: <a>localhost:3000/api/users/verify/:verificationToken</a></p>`,
-    // };
-
-    // await sgMail.send(msg);
     res.status(201).json({ user: { email, avatarURL } });
   } catch (err) {
     console.log(err);
@@ -104,4 +143,10 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
-module.exports = { userRegistration, userLogin, userLogout, getCurrentUser };
+module.exports = {
+  userRegistration,
+  userLogin,
+  userLogout,
+  getCurrentUser,
+  loginGoogleUsers,
+};

@@ -11,6 +11,6 @@ const googleAuth = async (req, res) => {
   };
   const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "1d" });
   await Users.findByIdAndUpdate(_id, { token });
-  res.json({ token });
+  res.cookie({ token });
 };
 module.exports = { googleAuth };
